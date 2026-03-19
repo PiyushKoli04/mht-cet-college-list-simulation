@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHT-CET · Choice Filling Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root,[data-theme="light"]{
+  --brand:#e6403a;--brand-600:#d8352e;--brand-soft:#fff1f0;
+  --ink:#111827;--ink-2:#374151;--muted:#6b7280;
+  --bg:#f7f8fb;--card:#ffffff;--stroke:#e5e7eb;
+  --ring:#cfe2ff;--row-alt:#fbfbfb;--row-hover:#f5f8ff;
+  --th-bg:#fafafa;--th-hover:#f0f0f0;--input-bg:#ffffff;
+  --chip-bg:#f0f4ff;--chip-color:#3b5bdb;
+  --chip-green-bg:#f0fdf4;--chip-green:#16a34a;
+  --chip-orange-bg:#fff7ed;--chip-orange:#ea580c;
+  --chip-red-bg:#fff1f0;--chip-red:#e6403a;
+  --shadow:0 20px 60px rgba(16,24,40,.06);
+  --topbar-bg:#fff;--step-inactive:#e5e7eb;
+}
+[data-theme="dark"]{
+  --brand:#ff6b65;--brand-600:#e6403a;--brand-soft:#3a1a18;
+  --ink:#f3f4f6;--ink-2:#d1d5db;--muted:#9ca3af;
+  --bg:#0f1117;--card:#1a1d27;--stroke:#2d3142;
+  --ring:#1e3a5f;--row-alt:#1e2130;--row-hover:#252840;
+  --th-bg:#151821;--th-hover:#1e2130;--input-bg:#13151f;
+  --chip-bg:#1e2a50;--chip-color:#93b4ff;
+  --chip-green-bg:#0d2918;--chip-green:#4ade80;
+  --chip-orange-bg:#2d1a08;--chip-orange:#fb923c;
+  --chip-red-bg:#3a1a18;--chip-red:#ff6b65;
+  --shadow:0 20px 60px rgba(0,0,0,.35);
+  --topbar-bg:#13151f;--step-inactive:#2d3142;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--ink);transition:background .25s,color .25s;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbar-bg);border-bottom:1px solid var(--stroke);backdrop-filter:blur(10px);transition:background .25s,border-color .25s;}
+.topbar-inner{max-width:1300px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.brand-badge{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--ink);font-size:15px;font-family:'Poppins',sans-serif;}
+.badge{width:34px;height:34px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:14px;box-shadow:0 6px 18px rgba(230,64,58,.3);flex-shrink:0;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.topbar-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2);}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:700;font-size:12px;flex-shrink:0;}
+
+/* THEME TOGGLE */
+.theme-toggle{position:relative;width:52px;height:28px;cursor:pointer;flex-shrink:0;}
+.theme-toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:var(--stroke);border-radius:999px;transition:background .3s;display:flex;align-items:center;justify-content:space-between;padding:0 5px;font-size:12px;}
+[data-theme="dark"] .toggle-track{background:#4f46e5;}
+.toggle-knob{position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none;}
+.theme-toggle input:checked~.toggle-knob{transform:translateX(24px);}
+
+/* PAGES */
+.page{display:none;min-height:calc(100vh - 58px);}
+.page.active{display:block;}
+
+/* WRAP */
+.wrap{max-width:1300px;margin:0 auto;padding:28px 20px 60px;}
+.wrap-sm{max-width:520px;margin:0 auto;padding:40px 20px 60px;}
+.wrap-md{max-width:800px;margin:0 auto;padding:28px 20px 60px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);padding:26px;margin-bottom:18px;transition:background .25s,border-color .25s;}
+.card-sm{padding:18px;}
+
+/* TYPOGRAPHY */
+h1{font-family:'Poppins',sans-serif;font-size:26px;font-weight:700;letter-spacing:.2px;color:var(--ink);margin-bottom:6px;}
+h2{font-family:'Poppins',sans-serif;font-size:19px;font-weight:700;color:var(--ink);margin-bottom:14px;}
+h3{font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:var(--ink-2);}
+.muted{color:var(--muted);font-size:13px;}
+
+/* FORMS */
+label{font-weight:600;color:var(--ink-2);display:block;margin:12px 0 6px;font-size:14px;}
+input[type="text"],input[type="email"],input[type="tel"],input[type="number"],input[type="password"],select,textarea{
+  width:100%;padding:12px 14px;border:1.5px solid var(--stroke);background:var(--input-bg);
+  border-radius:10px;font-size:14px;color:var(--ink);font-family:'DM Sans',sans-serif;
+  outline:none;transition:border .2s,box-shadow .2s,background .25s,color .25s;
+}
+input::placeholder{color:var(--muted);}
+input:focus,select:focus,textarea:focus{border-color:#bcd3ff;box-shadow:0 0 0 4px var(--ring);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.field-row{grid-template-columns:1fr;}}
+.help{font-size:12px;color:var(--muted);margin-top:5px;}
+.err{color:#dc2626;font-size:12.5px;margin-top:5px;}
+
+/* BUTTONS */
+.btn{appearance:none;border:none;cursor:pointer;padding:11px 18px;border-radius:10px;font-weight:600;font-family:'DM Sans',sans-serif;font-size:14px;transition:.2s transform,.2s box-shadow,.2s background,.2s opacity;}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 8px 16px rgba(230,64,58,.25);}
+.btn-primary:hover{background:var(--brand-600);transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--stroke);}
+.btn-ghost:hover{background:var(--row-hover);color:var(--ink);}
+.btn-sm{padding:7px 14px;font-size:13px;}
+.btn-icon{padding:8px;border-radius:8px;background:transparent;border:1.5px solid var(--stroke);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.15s;}
+.btn-icon:hover{background:var(--row-hover);color:var(--ink);}
+.btn[disabled]{opacity:.55;cursor:not-allowed;pointer-events:none;}
+.btn-full{width:100%;}
+
+/* CHIPS */
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--chip-bg);color:var(--chip-color);}
+.chip-green{background:var(--chip-green-bg);color:var(--chip-green);}
+.chip-orange{background:var(--chip-orange-bg);color:var(--chip-orange);}
+.chip-red{background:var(--chip-red-bg);color:var(--chip-red);}
+.chip-gray{background:var(--th-bg);color:var(--muted);}
+
+/* AUTH PAGE */
+.auth-wrap{min-height:calc(100vh - 58px);display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;box-shadow:var(--shadow);padding:36px 32px;width:100%;max-width:480px;}
+.auth-logo{text-align:center;margin-bottom:24px;}
+.auth-logo .badge{width:48px;height:48px;border-radius:14px;font-size:20px;margin:0 auto 10px;}
+.auth-logo h1{font-size:22px;margin:0;}
+.auth-logo p{color:var(--muted);font-size:13px;margin-top:4px;}
+.tabs{display:flex;border-bottom:2px solid var(--stroke);margin-bottom:22px;}
+.tab{flex:1;padding:10px;text-align:center;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:.2s;}
+.tab.active{color:var(--brand);border-color:var(--brand);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* STEP INDICATOR */
+.step-bar{display:flex;align-items:center;gap:0;margin-bottom:28px;}
+.step-item{display:flex;align-items:center;flex:1;}
+.step-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;transition:.3s;}
+.step-dot.done{background:var(--brand);color:#fff;}
+.step-dot.active{background:var(--brand);color:#fff;box-shadow:0 0 0 4px var(--brand-soft);}
+.step-dot.pending{background:var(--step-inactive);color:var(--muted);}
+.step-line{flex:1;height:2px;background:var(--step-inactive);transition:.3s;}
+.step-line.done{background:var(--brand);}
+.step-label{font-size:11px;color:var(--muted);margin-top:4px;text-align:center;font-weight:600;}
+.step-col{display:flex;flex-direction:column;align-items:center;}
+
+/* COLLEGE CARDS GRID */
+.college-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:16px;}
+.college-card{background:var(--card);border:2px solid var(--stroke);border-radius:13px;padding:16px;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .15s;position:relative;user-select:none;}
+.college-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08);}
+.college-card.selected{border-color:var(--brand);box-shadow:0 0 0 3px rgba(230,64,58,.12);}
+.college-card.aspirational{border-color:#f59e0b;}
+.college-card.aspirational:hover{box-shadow:0 8px 24px rgba(245,158,11,.12);}
+.cc-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.cc-name{font-weight:700;font-size:13.5px;color:var(--ink);line-height:1.4;}
+.cc-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--stroke);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s;}
+.college-card.selected .cc-check{background:var(--brand);border-color:var(--brand);}
+.cc-branch{font-size:12.5px;color:var(--ink-2);margin-bottom:10px;font-weight:500;}
+.cc-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.cc-pct{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+.cc-pct span{font-size:11px;font-weight:500;color:var(--muted);}
+.selected-badge{position:absolute;top:-1px;right:-1px;background:var(--brand);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:0 12px 0 8px;}
+
+/* PREFERENCE LIST */
+.pref-layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
+@media(max-width:900px){.pref-layout{grid-template-columns:1fr;}}
+.pref-list-wrap{background:var(--card);border:1px solid var(--stroke);border-radius:14px;overflow:hidden;}
+.pref-list-header{padding:16px 20px;border-bottom:1px solid var(--stroke);display:flex;justify-content:space-between;align-items:center;background:var(--th-bg);}
+.pref-list{list-style:none;min-height:80px;}
+.pref-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--stroke);transition:background .15s;cursor:grab;user-select:none;}
+.pref-item:last-child{border-bottom:none;}
+.pref-item:hover{background:var(--row-hover);}
+.pref-item.sortable-ghost{opacity:.4;background:var(--brand-soft);}
+.pref-item.sortable-chosen{box-shadow:0 4px 16px rgba(0,0,0,.1);}
+.drag-handle{color:var(--muted);font-size:16px;flex-shrink:0;cursor:grab;}
+.pref-rank{width:26px;height:26px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pref-info{flex:1;min-width:0;}
+.pref-name{font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pref-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.pref-code{font-size:11px;font-family:monospace;color:var(--chip-color);background:var(--chip-bg);padding:2px 7px;border-radius:5px;flex-shrink:0;}
+.pref-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;display:flex;align-items:center;font-size:16px;transition:.15s;flex-shrink:0;}
+.pref-del:hover{color:#dc2626;background:var(--chip-red-bg);}
+.pref-list-footer{padding:12px 16px;border-top:1px solid var(--stroke);background:var(--th-bg);}
+
+/* SUGGESTIONS PANEL */
+.sugg-panel{background:var(--card);border:1px solid var(--stroke);border-radius:14px;overflow:hidden;position:sticky;top:78px;}
+.sugg-header{padding:14px 16px;border-bottom:1px solid var(--stroke);background:var(--th-bg);}
+.sugg-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:10px 14px 4px;}
+.sugg-item{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--stroke);cursor:pointer;transition:background .15s;}
+.sugg-item:last-child{border-bottom:none;}
+.sugg-item:hover{background:var(--row-hover);}
+.sugg-info{flex:1;min-width:0;}
+.sugg-name{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.3;}
+.sugg-sub{font-size:11px;color:var(--muted);}
+.sugg-add{background:transparent;border:1.5px solid var(--stroke);border-radius:7px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--brand);cursor:pointer;transition:.15s;flex-shrink:0;}
+.sugg-add:hover{background:var(--brand-soft);border-color:var(--brand);}
+
+/* SEARCH */
+.search-wrap{position:relative;}
+.search-wrap input{padding-left:38px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;}
+
+/* CONTROLS */
+.controls-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+
+/* DASHBOARD */
+.user-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0;}
+.info-block{background:var(--bg);border-radius:10px;padding:14px 16px;border:1px solid var(--stroke);}
+.info-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;}
+.info-value{font-size:18px;font-weight:700;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums;}
+.info-value.large{font-size:22px;}
+.form-history-card{background:var(--bg);border:1px solid var(--stroke);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.form-history-card:hover{background:var(--row-hover);}
+
+/* ADMIN TABLE */
+.table-wrap{overflow:auto;border-radius:10px;border:1px solid var(--stroke);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--stroke);}
+th{background:var(--th-bg);font-weight:700;color:var(--ink-2);position:sticky;top:0;z-index:2;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--row-hover);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{background:var(--card);border-radius:16px;padding:28px;width:100%;max-width:480px;box-shadow:0 30px 80px rgba(0,0,0,.2);transform:scale(.96);transition:transform .2s;}
+.modal-overlay.open .modal-box{transform:scale(1);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.modal-close{background:transparent;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;padding:2px;}
+.modal-close:hover{color:var(--ink);}
+
+/* BRANCH CHIPS SELECTOR */
+.branch-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.branch-chip{padding:8px 14px;border-radius:999px;border:1.5px solid var(--stroke);font-size:13px;font-weight:500;cursor:pointer;background:var(--input-bg);color:var(--ink-2);transition:.2s;}
+.branch-chip:hover{border-color:var(--brand);color:var(--brand);}
+.branch-chip.selected{background:var(--brand-soft);border-color:var(--brand);color:var(--brand);font-weight:600;}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.toast{background:var(--card);border:1px solid var(--stroke);border-radius:10px;padding:12px 18px;font-size:13.5px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.12);display:flex;align-items:center;gap:10px;min-width:240px;pointer-events:all;animation:slideIn .25s ease;color:var(--ink);}
+.toast.success::before{content:'✓';background:#16a34a;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.toast.error::before{content:'✕';background:#dc2626;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.toast.info::before{content:'ℹ';background:#3b5bdb;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-icon{font-size:44px;margin-bottom:12px;}
+.empty-state h3{color:var(--ink-2);margin-bottom:6px;}
+
+/* LOCKED INPUT */
+.locked-field{background:var(--th-bg);border:1.5px solid var(--stroke);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--ink-2);display:flex;align-items:center;gap:8px;}
+.lock-icon{font-size:14px;color:var(--muted);}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-title{font-family:'Poppins',sans-serif;font-size:22px;font-weight:700;color:var(--ink);}
+
+/* CUSTOM CARD BADGE */
+.custom-badge{position:absolute;top:8px;right:8px;background:#7c3aed;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.4px;}
+
+/* ASPIRATIONAL HINT */
+.asp-hint{background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+[data-theme="dark"] .asp-hint{background:#2d1a00;color:#fbbf24;border-color:#92400e;}
+
+/* SELECTED COUNT BADGE */
+.sel-count{background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;}
+
+/* FORM VIEW PAGE */
+.form-view-header{background:var(--brand);color:#fff;border-radius:14px;padding:24px;margin-bottom:20px;}
+.form-view-header h2{color:#fff;margin-bottom:4px;}
+.form-view-meta{opacity:.85;font-size:13px;}
+.pref-table{width:100%;border-collapse:collapse;font-size:13px;}
+.pref-table th{background:var(--th-bg);padding:10px 12px;text-align:left;font-weight:700;color:var(--ink-2);border-bottom:2px solid var(--stroke);}
+.pref-table td{padding:10px 12px;border-bottom:1px solid var(--stroke);color:var(--ink);}
+.pref-table tr:last-child td{border-bottom:none;}
+.pref-table tr:hover td{background:var(--row-hover);}
+.rank-circle{width:26px;height:26px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;}
+
+/* NO RESULTS */
+.no-results{text-align:center;padding:40px;color:var(--muted);}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--stroke);margin:18px 0;}
+
+/* scroll */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--stroke);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand-badge">
+      <div class="badge">M</div>
+      <span>MHT-CET Choice Filling Tool</span>
+    </div>
+    <div class="topbar-right">
+      <label class="theme-toggle" title="Toggle theme">
+        <input type="checkbox" id="themeToggle">
+        <div class="toggle-track"><span>☀️</span><span>🌙</span></div>
+        <div class="toggle-knob"></div>
+      </label>
+      <div id="topbar-user"></div>
+    </div>
+  </div>
+</header>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===================== PAGE: AUTH ===================== -->
+<div id="page-auth" class="page">
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="badge">M</div>
+      <h1>MHT-CET Tool</h1>
+      <p>College Preference & Choice Filling Assistant</p>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('login')">Login</div>
+      <div class="tab" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <!-- LOGIN TAB -->
+    <div id="tab-login" class="tab-content active">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••">
+      <div id="loginErr" class="err" style="display:none"></div>
+      <div style="margin-top:18px">
+        <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+      </div>
+      <p class="help" style="text-align:center;margin-top:14px">Admin: admin@mhtcet.in / admin123</p>
+    </div>
+
+    <!-- REGISTER TAB -->
+    <div id="tab-register" class="tab-content">
+      <label>Full Name</label>
+      <input type="text" id="regName" placeholder="Rahul Sharma">
+      <label>Email Address</label>
+      <input type="email" id="regEmail" placeholder="rahul@example.com">
+      <div class="field-row">
+        <div>
+          <label>MHT-CET Percentile</label>
+          <input type="number" id="regPercentile" placeholder="92.5000" step="0.0001" min="0" max="100">
+        </div>
+        <div>
+          <label>MHT-CET Rank</label>
+          <input type="number" id="regRank" placeholder="22500" min="1">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="min 6 chars">
+        </div>
+        <div>
+          <label>Confirm Password</label>
+          <input type="password" id="regConfirm" placeholder="repeat password">
+        </div>
+      </div>
+      <div id="regErr" class="err" style="display:none"></div>
+      <div style="margin-top:18px">
+        <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
+      </div>
+      <p class="help" style="text-align:center;margin-top:10px">Once registered, percentile & rank can only be changed by admin.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PAGE: DASHBOARD ===================== -->
+<div id="page-dashboard" class="page">
+<div class="wrap">
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="dashTitle">Welcome 👋</div>
+      <div class="muted" id="dashSub">Your MHT-CET Dashboard</div>
+    </div>
+    <button class="btn btn-primary" onclick="startNewForm()">+ New Choice Form</button>
+  </div>
+
+  <!-- User Info Card -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">Your Details</h2>
+      <button class="btn btn-ghost btn-sm" onclick="showRequestChange()">✏️ Request Change</button>
+    </div>
+    <div class="user-info-grid" id="userInfoGrid"></div>
+    <div class="help" style="margin-top:8px">🔒 Name, email, percentile, and rank are locked. Contact admin to update.</div>
+  </div>
+
+  <!-- Past Forms -->
+  <div class="card">
+    <h2>Past Submissions</h2>
+    <div id="formHistory"></div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PAGE: STEP 1 ===================== -->
+<div id="page-step1" class="page">
+<div class="wrap-md">
+  <!-- Step bar -->
+  <div style="display:flex;justify-content:center;margin-bottom:28px" id="stepBar1"></div>
+
+  <div class="card">
+    <h2>Step 1: Setup Your Form</h2>
+    <p class="muted" style="margin-bottom:20px">Select the seat category and branches you're interested in.</p>
+
+    <label>Your Seat Category</label>
+    <select id="categorySelect">
+      <option value="">— Select Category —</option>
+      <option value="GOPENS">GOPENS — General Open (Government)</option>
+      <option value="GSCS">GSCS — SC Category (Government)</option>
+      <option value="GSTS">GSTS — ST Category (Government)</option>
+      <option value="GVJS">GVJS — VJ/NT-A Category (Government)</option>
+      <option value="GOBCS">GOBCS — OBC Category (Government)</option>
+      <option value="LOPENS">LOPENS — Open (Private/Linguistic Minority)</option>
+      <option value="LSCS">LSCS — SC (Private)</option>
+      <option value="LSTS">LSTS — ST (Private)</option>
+      <option value="LOBCS">LOBCS — OBC (Private)</option>
+      <option value="MI">MI — Minority Seats</option>
+      <option value="TFW">TFW — Tuition Fee Waiver</option>
+    </select>
+
+    <label style="margin-top:20px">Select Branches <span class="chip" style="font-size:11px;margin-left:6px" id="branchCount">0 selected</span></label>
+    <div class="branch-chips" id="branchChips"></div>
+
+    <div id="step1Err" class="err" style="display:none;margin-top:10px"></div>
+    <div style="display:flex;gap:10px;margin-top:26px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="showPage('dashboard')">← Back</button>
+      <button class="btn btn-primary" onclick="goStep2()">Continue → View Colleges</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PAGE: STEP 2 ===================== -->
+<div id="page-step2" class="page">
+<div class="wrap">
+  <div style="display:flex;justify-content:center;margin-bottom:24px" id="stepBar2"></div>
+
+  <div class="asp-hint" id="aspHint" style="display:none">
+    ⭐ <strong>Aspirational picks</strong> (marked with orange border) have cutoffs slightly above your percentile — add 2–3 as top preferences to stay eligible for better rounds!
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Select Colleges</div>
+      <div class="muted" id="step2Sub"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="sel-count" id="selectedCount">0 selected</span>
+      <button class="btn btn-ghost btn-sm" onclick="showManualAdd()">+ Manual Entry</button>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="search-wrap" style="flex:1;min-width:200px">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="collegeSearch" placeholder="Search college or branch…" oninput="renderCollegeCards()">
+    </div>
+    <select id="branchFilter" class="btn btn-ghost" style="min-width:180px;padding:10px 12px" onchange="renderCollegeCards()">
+      <option value="">All Selected Branches</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:13px;cursor:pointer;color:var(--ink-2)">
+      <input type="checkbox" id="showAspirationCheck" onchange="renderCollegeCards()"> Show aspirational
+    </label>
+  </div>
+
+  <div class="college-grid" id="collegeGrid"></div>
+
+  <div style="display:flex;gap:10px;margin-top:24px;justify-content:space-between;align-items:center">
+    <button class="btn btn-ghost" onclick="showPage('step1')">← Back</button>
+    <button class="btn btn-primary" onclick="goStep3()" id="continueToStep3">Continue → Build Preference List</button>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PAGE: STEP 3 ===================== -->
+<div id="page-step3" class="page">
+<div class="wrap">
+  <div style="display:flex;justify-content:center;margin-bottom:24px" id="stepBar3"></div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Your Preference List</div>
+      <div class="muted">Drag to reorder • Top preference = Rank 1</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('step2')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="saveDraftForm()">💾 Save Draft</button>
+      <button class="btn btn-primary btn-sm" onclick="saveAndPrint()">📄 Save & Generate PDF</button>
+    </div>
+  </div>
+
+  <div class="pref-layout">
+    <!-- LEFT: Preference List -->
+    <div>
+      <div class="pref-list-wrap">
+        <div class="pref-list-header">
+          <h3 style="margin:0">Preference List <span id="prefCount" class="chip" style="margin-left:6px">0</span></h3>
+          <button class="btn btn-ghost btn-sm" onclick="sortByPercentileDesc()">↓ Sort by %ile</button>
+        </div>
+        <ul class="pref-list" id="prefList"></ul>
+        <div class="pref-list-footer">
+          <button class="btn btn-ghost btn-sm btn-full" onclick="showAddMorePanel()">+ Add More Colleges</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Suggestions -->
+    <div>
+      <div class="sugg-panel">
+        <div class="sugg-header">
+          <h3 style="margin:0">💡 Suggestions</h3>
+          <div class="muted" style="font-size:11.5px;margin-top:3px">Click + to add to your list</div>
+        </div>
+        <div id="suggPanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PAGE: ADMIN ===================== -->
+<div id="page-admin" class="page">
+<div class="wrap">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🛡 Admin Dashboard</div>
+      <div class="muted" id="adminSub">Manage all registered users</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="adminSearch" placeholder="Search user…" oninput="renderAdminTable()" style="min-width:220px">
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table id="adminTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Name</th><th>Email</th><th>Percentile</th><th>Rank</th><th>Forms</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PAGE: FORM VIEW ===================== -->
+<div id="page-form-view" class="page">
+<div class="wrap-md">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <button class="btn btn-ghost btn-sm" onclick="showPage('dashboard')">← Dashboard</button>
+    <button class="btn btn-primary btn-sm" onclick="printViewForm()">📄 Download PDF</button>
+  </div>
+  <div id="formViewContent"></div>
+</div>
+</div>
+
+<!-- ===================== MODAL: Manual Add ===================== -->
+<div id="modalManual" class="modal-overlay" onclick="closeModalOutside(event,'modalManual')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 style="margin:0">Add College Manually</h2>
+      <button class="modal-close" onclick="closeModal('modalManual')">✕</button>
+    </div>
+    <label>Institute Name</label>
+    <input type="text" id="manualInstitute" placeholder="e.g. My College of Engineering, Pune">
+    <label>Branch</label>
+    <input type="text" id="manualBranch" placeholder="e.g. Computer Engineering">
+    <label>Seat Type</label>
+    <select id="manualSeatType">
+      <option value="GOPENS">GOPENS</option><option value="GSCS">GSCS</option>
+      <option value="GSTS">GSTS</option><option value="GOBCS">GOBCS</option>
+      <option value="LOPENS">LOPENS</option><option value="LSCS">LSCS</option>
+      <option value="MI">MI</option><option value="TFW">TFW</option>
+    </select>
+    <label>Cutoff Percentile (optional)</label>
+    <input type="number" id="manualPercentile" placeholder="e.g. 87.5" step="0.01">
+    <label>Cutoff Rank (optional)</label>
+    <input type="number" id="manualRank" placeholder="e.g. 45000">
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalManual')">Cancel</button>
+      <button class="btn btn-primary" onclick="addManualCollege()">Add to Selection</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: Edit User (Admin) ===================== -->
+<div id="modalEditUser" class="modal-overlay" onclick="closeModalOutside(event,'modalEditUser')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 style="margin:0">Edit User Details</h2>
+      <button class="modal-close" onclick="closeModal('modalEditUser')">✕</button>
+    </div>
+    <input type="hidden" id="editUserId">
+    <label>Full Name</label>
+    <input type="text" id="editName" placeholder="Full Name">
+    <label>Email</label>
+    <input type="email" id="editEmail" placeholder="email@example.com">
+    <div class="field-row">
+      <div>
+        <label>MHT-CET Percentile</label>
+        <input type="number" id="editPercentile" step="0.0001">
+      </div>
+      <div>
+        <label>MHT-CET Rank</label>
+        <input type="number" id="editRank">
+      </div>
+    </div>
+    <label>New Password (leave blank to keep)</label>
+    <input type="password" id="editPassword" placeholder="leave blank = no change">
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditUser')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: Add More (Step 3) ===================== -->
+<div id="modalAddMore" class="modal-overlay" onclick="closeModalOutside(event,'modalAddMore')">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-header">
+      <h2 style="margin:0">Add More Colleges</h2>
+      <button class="modal-close" onclick="closeModal('modalAddMore')">✕</button>
+    </div>
+    <div class="search-wrap" style="margin-bottom:14px">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="addMoreSearch" placeholder="Search colleges not in your list…" oninput="renderAddMore()">
+    </div>
+    <div id="addMoreList" style="max-height:380px;overflow-y:auto;border:1px solid var(--stroke);border-radius:10px;"></div>
+    <div style="margin-top:14px;text-align:right">
+      <button class="btn btn-primary btn-sm" onclick="closeModal('modalAddMore')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: Request Change ===================== -->
+<div id="modalRequestChange" class="modal-overlay" onclick="closeModalOutside(event,'modalRequestChange')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 style="margin:0">Request Detail Change</h2>
+      <button class="modal-close" onclick="closeModal('modalRequestChange')">✕</button>
+    </div>
+    <p style="color:var(--ink-2);font-size:14px;line-height:1.6">Your registered details (name, email, percentile, rank) are locked for security. To update any of these, please contact your administrator.</p>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-top:14px;font-size:13px;color:var(--muted)">
+      📧 Admin Email: <strong style="color:var(--ink)">admin@mhtcet.in</strong>
+    </div>
+    <div style="margin-top:18px;text-align:right">
+      <button class="btn btn-primary btn-sm" onclick="closeModal('modalRequestChange')">Got it</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+//  COLLEGE DATA (embedded — replace with full dataset)
+// =========================================================
+const COLLEGE_DATA = [
+  // VJTI Mumbai
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"380","Percentile":"99.8740","Choice Code":"11190101"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"6500","Percentile":"97.8500","Choice Code":"11190102"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GSTS","Rank":"27800","Percentile":"91.2000","Choice Code":"11190103"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOBCS","Rank":"2580","Percentile":"99.1500","Choice Code":"11190105"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"540","Percentile":"99.8200","Choice Code":"11190201"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"8500","Percentile":"97.2000","Choice Code":"11190202"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"1650","Percentile":"99.4500","Choice Code":"11190401"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"850","Percentile":"99.7200","Choice Code":"11190301"},
+  {"Institute Code":"1119","Institute":"Veermata Jijabai Technological Institute (VJTI), Mumbai","Branch":"Electrical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"1200","Percentile":"99.5900","Choice Code":"11190601"},
+  // COEP Pune
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"670","Percentile":"99.7800","Choice Code":"10590101"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"7600","Percentile":"97.5500","Choice Code":"10590102"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOBCS","Rank":"2800","Percentile":"99.1000","Choice Code":"10590105"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"890","Percentile":"99.7100","Choice Code":"10590201"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"9300","Percentile":"96.9000","Choice Code":"10590202"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Artificial Intelligence & Data Science","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"1050","Percentile":"99.6500","Choice Code":"10590701"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"1200","Percentile":"99.6000","Choice Code":"10590301"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"2250","Percentile":"99.2500","Choice Code":"10590401"},
+  {"Institute Code":"1059","Institute":"Government College of Engineering, Pune (COEP)","Branch":"Civil Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"6700","Percentile":"97.8000","Choice Code":"10590501"},
+  // ICT Mumbai
+  {"Institute Code":"1127","Institute":"Institute of Chemical Technology (ICT), Mumbai","Branch":"Chemical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"1340","Percentile":"99.5500","Choice Code":"11270801"},
+  {"Institute Code":"1127","Institute":"Institute of Chemical Technology (ICT), Mumbai","Branch":"Chemical Engineering","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"8900","Percentile":"97.1000","Choice Code":"11270802"},
+  // Walchand Sangli
+  {"Institute Code":"1073","Institute":"Walchand College of Engineering, Sangli","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"3250","Percentile":"98.9200","Choice Code":"10730101"},
+  {"Institute Code":"1073","Institute":"Walchand College of Engineering, Sangli","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"12800","Percentile":"95.8000","Choice Code":"10730102"},
+  {"Institute Code":"1073","Institute":"Walchand College of Engineering, Sangli","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"3900","Percentile":"98.7500","Choice Code":"10730201"},
+  {"Institute Code":"1073","Institute":"Walchand College of Engineering, Sangli","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"6500","Percentile":"97.8500","Choice Code":"10730401"},
+  {"Institute Code":"1073","Institute":"Walchand College of Engineering, Sangli","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"8700","Percentile":"97.2000","Choice Code":"10730301"},
+  // GCOE Nagpur
+  {"Institute Code":"1007","Institute":"Government College of Engineering, Nagpur","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"6500","Percentile":"97.8500","Choice Code":"10070101"},
+  {"Institute Code":"1007","Institute":"Government College of Engineering, Nagpur","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"16700","Percentile":"94.5000","Choice Code":"10070102"},
+  {"Institute Code":"1007","Institute":"Government College of Engineering, Nagpur","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"7800","Percentile":"97.5200","Choice Code":"10070201"},
+  {"Institute Code":"1007","Institute":"Government College of Engineering, Nagpur","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"10700","Percentile":"96.4500","Choice Code":"10070401"},
+  {"Institute Code":"1007","Institute":"Government College of Engineering, Nagpur","Branch":"Civil Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"22850","Percentile":"92.4000","Choice Code":"10070501"},
+  {"Institute Code":"1007","Institute":"Government College of Engineering, Nagpur","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"9600","Percentile":"96.8000","Choice Code":"10070301"},
+  // GCOE Amravati
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"10680","Percentile":"96.4500","Choice Code":"10020101"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GSCS","Rank":"21500","Percentile":"93.2000","Choice Code":"10020102"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"12500","Percentile":"95.9000","Choice Code":"10020201"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Civil Engineering","Institute Status":"Government Autonomous Home University : Autonomous Institute","Seat Type":"GOPENS","Rank":"37591","Percentile":"88.9551","Choice Code":"10020501"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Civil Engineering","Institute Status":"Government Autonomous Home University : Autonomous Institute","Seat Type":"GSCS","Rank":"58518","Percentile":"82.3322","Choice Code":"10020502"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Civil Engineering","Institute Status":"Government Autonomous Home University : Autonomous Institute","Seat Type":"GSTS","Rank":"94334","Percentile":"69.4936","Choice Code":"10020503"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Civil Engineering","Institute Status":"Government Autonomous Home University : Autonomous Institute","Seat Type":"GVJS","Rank":"44057","Percentile":"86.9194","Choice Code":"10020504"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"19200","Percentile":"93.8000","Choice Code":"10020401"},
+  {"Institute Code":"1002","Institute":"Government College of Engineering, Amravati","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"17600","Percentile":"94.2000","Choice Code":"10020301"},
+  // GCOE Aurangabad
+  {"Institute Code":"1009","Institute":"Government College of Engineering, Aurangabad","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"12900","Percentile":"95.8000","Choice Code":"10090101"},
+  {"Institute Code":"1009","Institute":"Government College of Engineering, Aurangabad","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"14750","Percentile":"95.1000","Choice Code":"10090201"},
+  {"Institute Code":"1009","Institute":"Government College of Engineering, Aurangabad","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"20200","Percentile":"93.4000","Choice Code":"10090401"},
+  {"Institute Code":"1009","Institute":"Government College of Engineering, Aurangabad","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"16500","Percentile":"94.5000","Choice Code":"10090301"},
+  {"Institute Code":"1009","Institute":"Government College of Engineering, Aurangabad","Branch":"Civil Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"42800","Percentile":"87.6000","Choice Code":"10090501"},
+  // SGGSIE Nanded
+  {"Institute Code":"1044","Institute":"Shri Guru Gobind Singhji Institute of Engineering & Technology, Nanded","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"14750","Percentile":"95.1000","Choice Code":"10440101"},
+  {"Institute Code":"1044","Institute":"Shri Guru Gobind Singhji Institute of Engineering & Technology, Nanded","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"15600","Percentile":"94.8500","Choice Code":"10440201"},
+  {"Institute Code":"1044","Institute":"Shri Guru Gobind Singhji Institute of Engineering & Technology, Nanded","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"19200","Percentile":"93.8000","Choice Code":"10440301"},
+  {"Institute Code":"1044","Institute":"Shri Guru Gobind Singhji Institute of Engineering & Technology, Nanded","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"26800","Percentile":"91.5000","Choice Code":"10440401"},
+  // GCOE Karad
+  {"Institute Code":"1028","Institute":"Government College of Engineering, Karad","Branch":"Computer Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"20100","Percentile":"93.4000","Choice Code":"10280101"},
+  {"Institute Code":"1028","Institute":"Government College of Engineering, Karad","Branch":"Information Technology","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"22200","Percentile":"92.8000","Choice Code":"10280201"},
+  {"Institute Code":"1028","Institute":"Government College of Engineering, Karad","Branch":"Mechanical Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"27600","Percentile":"91.2500","Choice Code":"10280401"},
+  {"Institute Code":"1028","Institute":"Government College of Engineering, Karad","Branch":"Civil Engineering","Institute Status":"Government Autonomous","Seat Type":"GOPENS","Rank":"46200","Percentile":"85.6000","Choice Code":"10280501"},
+  // DJ Sanghvi Mumbai (Private Autonomous)
+  {"Institute Code":"1128","Institute":"D.J. Sanghvi College of Engineering, Mumbai","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"9600","Percentile":"96.8000","Choice Code":"11280106"},
+  {"Institute Code":"1128","Institute":"D.J. Sanghvi College of Engineering, Mumbai","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"10800","Percentile":"96.4000","Choice Code":"11280206"},
+  {"Institute Code":"1128","Institute":"D.J. Sanghvi College of Engineering, Mumbai","Branch":"Artificial Intelligence & Data Science","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"12500","Percentile":"95.9000","Choice Code":"11280706"},
+  {"Institute Code":"1128","Institute":"D.J. Sanghvi College of Engineering, Mumbai","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"11400","Percentile":"96.1000","Choice Code":"11280306"},
+  // Fr. CRCE Mumbai
+  {"Institute Code":"1125","Institute":"Fr. Conceicao Rodrigues College of Engineering, Mumbai","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"15700","Percentile":"94.8000","Choice Code":"11250106"},
+  {"Institute Code":"1125","Institute":"Fr. Conceicao Rodrigues College of Engineering, Mumbai","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"17400","Percentile":"94.2000","Choice Code":"11250206"},
+  {"Institute Code":"1125","Institute":"Fr. Conceicao Rodrigues College of Engineering, Mumbai","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"19800","Percentile":"93.5000","Choice Code":"11250306"},
+  // Thadomal Shahani
+  {"Institute Code":"1126","Institute":"Thadomal Shahani Engineering College, Mumbai","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"19200","Percentile":"93.8000","Choice Code":"11260106"},
+  {"Institute Code":"1126","Institute":"Thadomal Shahani Engineering College, Mumbai","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"21000","Percentile":"93.1000","Choice Code":"11260206"},
+  // SPCE Mumbai
+  {"Institute Code":"1124","Institute":"Sardar Patel College of Engineering, Mumbai","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"17800","Percentile":"94.1000","Choice Code":"11240106"},
+  {"Institute Code":"1124","Institute":"Sardar Patel College of Engineering, Mumbai","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"19800","Percentile":"93.5000","Choice Code":"11240206"},
+  {"Institute Code":"1124","Institute":"Sardar Patel College of Engineering, Mumbai","Branch":"Mechanical Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"30100","Percentile":"90.5000","Choice Code":"11240406"},
+  {"Institute Code":"1124","Institute":"Sardar Patel College of Engineering, Mumbai","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"22200","Percentile":"92.8000","Choice Code":"11240306"},
+  // PICT Pune
+  {"Institute Code":"1063","Institute":"Pune Institute of Computer Technology (PICT)","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"11450","Percentile":"96.2000","Choice Code":"10630106"},
+  {"Institute Code":"1063","Institute":"Pune Institute of Computer Technology (PICT)","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"12380","Percentile":"95.8800","Choice Code":"10630206"},
+  {"Institute Code":"1063","Institute":"Pune Institute of Computer Technology (PICT)","Branch":"Artificial Intelligence & Data Science","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"14200","Percentile":"95.2000","Choice Code":"10630706"},
+  // VIT Pune
+  {"Institute Code":"1066","Institute":"Vishwakarma Institute of Technology, Pune","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"16700","Percentile":"94.5000","Choice Code":"10660106"},
+  {"Institute Code":"1066","Institute":"Vishwakarma Institute of Technology, Pune","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"19400","Percentile":"93.8000","Choice Code":"10660206"},
+  {"Institute Code":"1066","Institute":"Vishwakarma Institute of Technology, Pune","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"27800","Percentile":"91.2000","Choice Code":"10660306"},
+  {"Institute Code":"1066","Institute":"Vishwakarma Institute of Technology, Pune","Branch":"Artificial Intelligence & Data Science","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"20200","Percentile":"93.4000","Choice Code":"10660706"},
+  // MIT COE Pune
+  {"Institute Code":"1062","Institute":"MIT College of Engineering, Pune","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"21500","Percentile":"93.2000","Choice Code":"10620106"},
+  {"Institute Code":"1062","Institute":"MIT College of Engineering, Pune","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"23800","Percentile":"92.4000","Choice Code":"10620206"},
+  {"Institute Code":"1062","Institute":"MIT College of Engineering, Pune","Branch":"Artificial Intelligence & Data Science","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"22400","Percentile":"92.8000","Choice Code":"10620706"},
+  {"Institute Code":"1062","Institute":"MIT College of Engineering, Pune","Branch":"Mechanical Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"38200","Percentile":"88.8000","Choice Code":"10620406"},
+  // PCCOE Pune
+  {"Institute Code":"1065","Institute":"Pimpri Chinchwad College of Engineering, Pune","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"26800","Percentile":"91.5000","Choice Code":"10650106"},
+  {"Institute Code":"1065","Institute":"Pimpri Chinchwad College of Engineering, Pune","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"29400","Percentile":"90.8000","Choice Code":"10650206"},
+  {"Institute Code":"1065","Institute":"Pimpri Chinchwad College of Engineering, Pune","Branch":"Mechanical Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"40100","Percentile":"88.2000","Choice Code":"10650406"},
+  {"Institute Code":"1065","Institute":"Pimpri Chinchwad College of Engineering, Pune","Branch":"Electronics & Telecommunication Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"35200","Percentile":"89.5000","Choice Code":"10650306"},
+  // Sinhgad COE
+  {"Institute Code":"1069","Institute":"Sinhgad College of Engineering, Pune","Branch":"Computer Engineering","Institute Status":"Private Unaided","Seat Type":"LOPENS","Rank":"39400","Percentile":"88.5000","Choice Code":"10690106"},
+  {"Institute Code":"1069","Institute":"Sinhgad College of Engineering, Pune","Branch":"Information Technology","Institute Status":"Private Unaided","Seat Type":"LOPENS","Rank":"43100","Percentile":"87.2000","Choice Code":"10690206"},
+  {"Institute Code":"1069","Institute":"Sinhgad College of Engineering, Pune","Branch":"Mechanical Engineering","Institute Status":"Private Unaided","Seat Type":"LOPENS","Rank":"50200","Percentile":"84.5000","Choice Code":"10690406"},
+  // KK Wagh Nashik
+  {"Institute Code":"1089","Institute":"KK Wagh Institute of Engineering Education & Research, Nashik","Branch":"Computer Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"35200","Percentile":"89.5000","Choice Code":"10890106"},
+  {"Institute Code":"1089","Institute":"KK Wagh Institute of Engineering Education & Research, Nashik","Branch":"Information Technology","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"40100","Percentile":"88.2000","Choice Code":"10890206"},
+  {"Institute Code":"1089","Institute":"KK Wagh Institute of Engineering Education & Research, Nashik","Branch":"Mechanical Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"46200","Percentile":"85.6000","Choice Code":"10890406"},
+  {"Institute Code":"1089","Institute":"KK Wagh Institute of Engineering Education & Research, Nashik","Branch":"Civil Engineering","Institute Status":"Private Unaided Autonomous","Seat Type":"LOPENS","Rank":"66100","Percentile":"79.5000","Choice Code":"10890506"},
+  // Marathwada Institute Aurangabad
+  {"Institute Code":"2006","Institute":"Marathwada Institute of Technology, Aurangabad","Branch":"Computer Engineering","Institute Status":"Private Unaided","Seat Type":"LOPENS","Rank":"44800","Percentile":"86.5000","Choice Code":"20060106"},
+  {"Institute Code":"2006","Institute":"Marathwada Institute of Technology, Aurangabad","Branch":"Information Technology","Institute Status":"Private Unaided","Seat Type":"LOPENS","Rank":"48100","Percentile":"85.2000","Choice Code":"20060206"},
+  {"Institute Code":"2006","Institute":"Marathwada Institute of Technology, Aurangabad","Branch":"Mechanical Engineering","Institute Status":"Private Unaided","Seat Type":"LOPENS","Rank":"61200","Percentile":"80.5000","Choice Code":"20060406"},
+];
+
+// =========================================================
+//  CONSTANTS
+// =========================================================
+const BRANCHES = [
+  "Computer Engineering",
+  "Information Technology",
+  "Electronics & Telecommunication Engineering",
+  "Mechanical Engineering",
+  "Civil Engineering",
+  "Electrical Engineering",
+  "Artificial Intelligence & Data Science",
+  "Chemical Engineering",
+];
+
+// =========================================================
+//  STATE
+// =========================================================
+let STATE = {
+  user: null,
+  form: {
+    id: null,
+    category: '',
+    branches: [],
+    selectedColleges: [],
+    prefList: [],
+  },
+  viewingFormId: null,
+  sortableInstance: null,
+};
+
+// =========================================================
+//  STORAGE
+// =========================================================
+const DB = {
+  getUsers: () => JSON.parse(localStorage.getItem('mhtcet_users') || '[]'),
+  saveUsers: u => localStorage.setItem('mhtcet_users', JSON.stringify(u)),
+  getForms: () => JSON.parse(localStorage.getItem('mhtcet_forms') || '[]'),
+  saveForms: f => localStorage.setItem('mhtcet_forms', JSON.stringify(f)),
+  getSession: () => JSON.parse(localStorage.getItem('mhtcet_session') || 'null'),
+  saveSession: u => localStorage.setItem('mhtcet_session', JSON.stringify(u)),
+  clearSession: () => localStorage.removeItem('mhtcet_session'),
+};
+
+// =========================================================
+//  UTILS
+// =========================================================
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; }
+  return h.toString(36);
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function fmtPct(v) { return parseFloat(v).toFixed(4); }
+function fmtNum(v) { return parseInt(v).toLocaleString('en-IN'); }
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  updateTopbar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeModalOutside(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// =========================================================
+//  TOPBAR
+// =========================================================
+function updateTopbar() {
+  const el = document.getElementById('topbar-user');
+  if (!STATE.user) { el.innerHTML = ''; return; }
+  const initial = STATE.user.name.charAt(0).toUpperCase();
+  el.innerHTML = `
+    <div class="topbar-user">
+      <div class="avatar">${initial}</div>
+      <span style="display:none;display:inline" class="hide-mobile">${STATE.user.name}</span>
+      ${STATE.user.role === 'admin' ? '<span class="chip chip-red" style="font-size:10px">Admin</span>' : ''}
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>`;
+}
+
+// =========================================================
+//  THEME TOGGLE
+// =========================================================
+document.getElementById('themeToggle').addEventListener('change', function () {
+  document.documentElement.setAttribute('data-theme', this.checked ? 'dark' : 'light');
+  localStorage.setItem('mhtcet_theme', this.checked ? 'dark' : 'light');
+});
+(function applyTheme() {
+  const t = localStorage.getItem('mhtcet_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeToggle').checked = (t === 'dark');
+})();
+
+// =========================================================
+//  AUTH TABS
+// =========================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+  });
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+
+// =========================================================
+//  REGISTER / LOGIN
+// =========================================================
+function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const percentile = parseFloat(document.getElementById('regPercentile').value);
+  const rank = parseInt(document.getElementById('regRank').value);
+  const pwd = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const errEl = document.getElementById('regErr');
+
+  errEl.style.display = 'none';
+  const err = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+
+  if (!name) return err('Full name is required.');
+  if (!email || !email.includes('@')) return err('Valid email is required.');
+  if (email === 'admin@mhtcet.in') return err('This email is reserved.');
+  if (isNaN(percentile) || percentile < 0 || percentile > 100) return err('Valid percentile (0–100) required.');
+  if (isNaN(rank) || rank < 1) return err('Valid rank required.');
+  if (pwd.length < 6) return err('Password must be at least 6 characters.');
+  if (pwd !== confirm) return err('Passwords do not match.');
+
+  const users = DB.getUsers();
+  if (users.find(u => u.email === email)) return err('Email already registered. Please login.');
+
+  const user = { id: uid(), name, email, percentile, rank, password: simpleHash(pwd), role: 'user', createdAt: new Date().toISOString() };
+  users.push(user);
+  DB.saveUsers(users);
+  DB.saveSession(user);
+  STATE.user = user;
+  toast('Account created successfully!', 'success');
+  renderDashboard();
+  showPage('dashboard');
+}
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pwd = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+  const err = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+
+  if (!email) return err('Email required.');
+  if (!pwd) return err('Password required.');
+
+  // Admin check
+  if (email === 'admin@mhtcet.in' && pwd === 'admin123') {
+    const admin = { id: 'admin', name: 'Administrator', email, role: 'admin' };
+    DB.saveSession(admin);
+    STATE.user = admin;
+    toast('Welcome, Admin!', 'success');
+    renderAdminTable();
+    showPage('admin');
+    return;
+  }
+
+  const users = DB.getUsers();
+  const user = users.find(u => u.email === email && u.password === simpleHash(pwd));
+  if (!user) return err('Invalid email or password.');
+
+  DB.saveSession(user);
+  STATE.user = user;
+  toast('Welcome back, ' + user.name + '!', 'success');
+  renderDashboard();
+  showPage('dashboard');
+}
+
+function doLogout() {
+  DB.clearSession();
+  STATE.user = null;
+  STATE.form = { id: null, category: '', branches: [], selectedColleges: [], prefList: [] };
+  document.getElementById('topbar-user').innerHTML = '';
+  showPage('auth');
+  toast('Logged out.', 'info');
+}
+
+// =========================================================
+//  DASHBOARD
+// =========================================================
+function renderDashboard() {
+  const u = STATE.user;
+  document.getElementById('dashTitle').textContent = 'Welcome, ' + u.name + ' 👋';
+  document.getElementById('dashSub').textContent = 'Your MHT-CET Choice Filling Dashboard';
+
+  document.getElementById('userInfoGrid').innerHTML = `
+    <div class="info-block">
+      <div class="info-label">Full Name</div>
+      <div class="info-value" style="font-size:16px">${u.name}</div>
+    </div>
+    <div class="info-block">
+      <div class="info-label">Email</div>
+      <div class="info-value" style="font-size:14px">${u.email}</div>
+    </div>
+    <div class="info-block">
+      <div class="info-label">Percentile</div>
+      <div class="info-value large">${fmtPct(u.percentile)}</div>
+    </div>
+    <div class="info-block">
+      <div class="info-label">Rank</div>
+      <div class="info-value large">${fmtNum(u.rank)}</div>
+    </div>`;
+
+  const allForms = DB.getForms().filter(f => f.userId === u.id);
+  const histEl = document.getElementById('formHistory');
+  if (allForms.length === 0) {
+    histEl.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><h3>No submissions yet</h3><p>Click "New Choice Form" to get started.</p></div>`;
+    return;
+  }
+  histEl.innerHTML = allForms.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(f => `
+    <div class="form-history-card">
+      <div>
+        <div style="font-weight:600;font-size:14px">${f.category} · ${f.branches.join(', ')}</div>
+        <div class="muted">${new Date(f.createdAt).toLocaleString('en-IN')} · ${f.prefList.length} preferences</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="viewForm('${f.id}')">View</button>
+        <button class="btn btn-primary btn-sm" onclick="editForm('${f.id}')">Edit</button>
+      </div>
+    </div>`).join('');
+}
+
+function showRequestChange() { openModal('modalRequestChange'); }
+
+// =========================================================
+//  FORM WIZARD - START / EDIT
+// =========================================================
+function startNewForm() {
+  STATE.form = { id: uid(), category: '', branches: [], selectedColleges: [], prefList: [] };
+  renderStep1();
+  showPage('step1');
+}
+
+function editForm(formId) {
+  const forms = DB.getForms();
+  const form = forms.find(f => f.id === formId);
+  if (!form) return toast('Form not found.', 'error');
+  STATE.form = JSON.parse(JSON.stringify(form));
+  renderStep1();
+  showPage('step1');
+}
+
+// =========================================================
+//  STEP 1
+// =========================================================
+function renderStep1() {
+  document.getElementById('stepBar1').innerHTML = buildStepBar(1);
+  document.getElementById('categorySelect').value = STATE.form.category || '';
+
+  const chipsEl = document.getElementById('branchChips');
+  chipsEl.innerHTML = BRANCHES.map(b => `
+    <div class="branch-chip ${STATE.form.branches.includes(b) ? 'selected' : ''}"
+         onclick="toggleBranch(this,'${b}')">${b}</div>`).join('');
+  updateBranchCount();
+}
+
+function toggleBranch(el, branch) {
+  el.classList.toggle('selected');
+  const idx = STATE.form.branches.indexOf(branch);
+  if (idx > -1) STATE.form.branches.splice(idx, 1);
+  else STATE.form.branches.push(branch);
+  updateBranchCount();
+}
+
+function updateBranchCount() {
+  document.getElementById('branchCount').textContent = STATE.form.branches.length + ' selected';
+}
+
+function goStep2() {
+  const cat = document.getElementById('categorySelect').value;
+  const errEl = document.getElementById('step1Err');
+  errEl.style.display = 'none';
+  if (!cat) { errEl.textContent = 'Please select a category.'; errEl.style.display = 'block'; return; }
+  if (STATE.form.branches.length === 0) { errEl.textContent = 'Please select at least one branch.'; errEl.style.display = 'block'; return; }
+  STATE.form.category = cat;
+  document.getElementById('stepBar2').innerHTML = buildStepBar(2);
+
+  const eligible = COLLEGE_DATA.filter(c => c['Seat Type'] === cat && STATE.form.branches.includes(c.Branch) && parseFloat(c.Percentile) <= STATE.user.percentile);
+  const aspirational = COLLEGE_DATA.filter(c => c['Seat Type'] === cat && STATE.form.branches.includes(c.Branch) && parseFloat(c.Percentile) > STATE.user.percentile && parseFloat(c.Percentile) <= STATE.user.percentile + 6);
+
+  document.getElementById('aspHint').style.display = aspirational.length > 0 ? 'flex' : 'none';
+  document.getElementById('step2Sub').textContent = `Category: ${cat} · ${eligible.length} eligible colleges found`;
+
+  // Populate branch filter
+  const bf = document.getElementById('branchFilter');
+  bf.innerHTML = '<option value="">All Selected Branches</option>' + STATE.form.branches.map(b => `<option value="${b}">${b}</option>`).join('');
+
+  renderCollegeCards();
+  showPage('step2');
+}
+
+// =========================================================
+//  STEP 2 - COLLEGE CARDS
+// =========================================================
+function renderCollegeCards() {
+  const cat = STATE.form.category;
+  const branches = STATE.form.branches;
+  const search = document.getElementById('collegeSearch').value.toLowerCase();
+  const branchFilter = document.getElementById('branchFilter').value;
+  const showAsp = document.getElementById('showAspirationCheck').checked;
+  const userPct = STATE.user.percentile;
+
+  const eligible = COLLEGE_DATA.filter(c =>
+    c['Seat Type'] === cat &&
+    branches.includes(c.Branch) &&
+    parseFloat(c.Percentile) <= userPct
+  );
+
+  const aspirational = showAsp ? COLLEGE_DATA.filter(c =>
+    c['Seat Type'] === cat &&
+    branches.includes(c.Branch) &&
+    parseFloat(c.Percentile) > userPct &&
+    parseFloat(c.Percentile) <= userPct + 6
+  ) : [];
+
+  // Include custom colleges
+  const customs = STATE.form.selectedColleges.filter(c => c.custom);
+  let all = [...eligible, ...aspirational, ...customs.filter(c => !eligible.find(e => e['Choice Code'] === c['Choice Code']))];
+
+  if (search) {
+    all = all.filter(c =>
+      c.Institute.toLowerCase().includes(search) ||
+      c.Branch.toLowerCase().includes(search)
+    );
+  }
+  if (branchFilter) all = all.filter(c => c.Branch === branchFilter);
+
+  all.sort((a, b) => parseFloat(b.Percentile) - parseFloat(a.Percentile));
+
+  const grid = document.getElementById('collegeGrid');
+  if (all.length === 0) {
+    grid.innerHTML = `<div class="no-results" style="grid-column:1/-1">🔍 No colleges found for selected filters.</div>`;
+    updateSelCount();
+    return;
+  }
+
+  const selectedCodes = new Set(STATE.form.selectedColleges.map(c => c['Choice Code']));
+
+  grid.innerHTML = all.map(c => {
+    const isSelected = selectedCodes.has(c['Choice Code']);
+    const isAsp = parseFloat(c.Percentile) > userPct;
+    const isCustom = c.custom;
+    const pct = parseFloat(c.Percentile);
+    return `
+      <div class="college-card ${isSelected ? 'selected' : ''} ${isAsp ? 'aspirational' : ''}"
+           onclick="toggleCollege(this, '${c['Choice Code']}')"
+           data-code="${c['Choice Code']}">
+        ${isSelected ? '<div class="selected-badge">✓ Selected</div>' : ''}
+        ${isCustom ? '<div class="custom-badge">Custom</div>' : ''}
+        <div class="cc-header">
+          <div class="cc-name">${c.Institute}</div>
+          <div class="cc-check">${isSelected ? '<span style="color:#fff;font-size:12px;font-weight:800">✓</span>' : ''}</div>
+        </div>
+        <div class="cc-branch">${c.Branch}</div>
+        <div class="cc-meta">
+          <div class="cc-pct">${pct.toFixed(2)}<span>% cutoff</span></div>
+          <span class="chip ${isAsp ? 'chip-orange' : 'chip-green'}" style="font-size:10px">
+            ${isAsp ? '⭐ Aspirational' : '✓ Eligible'}
+          </span>
+          <span class="chip chip-gray" style="font-size:10px">${c['Seat Type']}</span>
+          ${c['Institute Status'] && c['Institute Status'].toLowerCase().includes('autonomous') ? '<span class="chip" style="font-size:10px">Autonomous</span>' : ''}
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">Rank: ${fmtNum(c.Rank)} · Code: ${c['Choice Code']}</div>
+      </div>`;
+  }).join('');
+
+  updateSelCount();
+}
+
+function toggleCollege(el, code) {
+  const all = [
+    ...COLLEGE_DATA,
+    ...STATE.form.selectedColleges.filter(c => c.custom)
+  ];
+  const college = all.find(c => c['Choice Code'] === code);
+  if (!college) return;
+
+  const idx = STATE.form.selectedColleges.findIndex(c => c['Choice Code'] === code);
+  if (idx > -1) {
+    STATE.form.selectedColleges.splice(idx, 1);
+    toast('Removed: ' + college.Institute.split(',')[0], 'info');
+  } else {
+    STATE.form.selectedColleges.push(college);
+    toast('Added: ' + college.Institute.split(',')[0], 'success');
+  }
+  renderCollegeCards();
+}
+
+function updateSelCount() {
+  document.getElementById('selectedCount').textContent = STATE.form.selectedColleges.length + ' selected';
+}
+
+function showManualAdd() { openModal('modalManual'); }
+
+function addManualCollege() {
+  const institute = document.getElementById('manualInstitute').value.trim();
+  const branch = document.getElementById('manualBranch').value.trim();
+  const seatType = document.getElementById('manualSeatType').value;
+  const percentile = document.getElementById('manualPercentile').value || '0';
+  const rank = document.getElementById('manualRank').value || '999999';
+
+  if (!institute || !branch) return toast('Institute and branch are required.', 'error');
+
+  const code = 'CUSTOM-' + uid().substr(0, 6).toUpperCase();
+  const college = {
+    'Institute Code': 'CUSTOM',
+    'Institute': institute,
+    'Branch': branch,
+    'Institute Status': 'Custom Entry',
+    'Seat Type': seatType,
+    'Rank': rank,
+    'Percentile': percentile,
+    'Choice Code': code,
+    custom: true
+  };
+
+  STATE.form.selectedColleges.push(college);
+  closeModal('modalManual');
+  document.getElementById('manualInstitute').value = '';
+  document.getElementById('manualBranch').value = '';
+  document.getElementById('manualPercentile').value = '';
+  document.getElementById('manualRank').value = '';
+  renderCollegeCards();
+  toast('Custom college added!', 'success');
+}
+
+// =========================================================
+//  STEP 3 - PREFERENCE LIST
+// =========================================================
+function goStep3() {
+  if (STATE.form.selectedColleges.length === 0) {
+    return toast('Please select at least one college.', 'error');
+  }
+
+  document.getElementById('stepBar3').innerHTML = buildStepBar(3);
+
+  // Build prefList from selected colleges if not already set (or merge new selections)
+  const existingCodes = new Set(STATE.form.prefList.map(c => c['Choice Code']));
+  const newOnes = STATE.form.selectedColleges.filter(c => !existingCodes.has(c['Choice Code']));
+  // Add new ones sorted by percentile desc
+  newOnes.sort((a, b) => parseFloat(b.Percentile) - parseFloat(a.Percentile));
+  STATE.form.prefList = [...STATE.form.prefList, ...newOnes];
+  // Remove any that were deselected
+  STATE.form.prefList = STATE.form.prefList.filter(p => STATE.form.selectedColleges.find(s => s['Choice Code'] === p['Choice Code']));
+
+  renderPrefList();
+  renderSuggestions();
+  showPage('step3');
+
+  // Initialize Sortable
+  setTimeout(() => {
+    if (STATE.sortableInstance) STATE.sortableInstance.destroy();
+    STATE.sortableInstance = new Sortable(document.getElementById('prefList'), {
+      animation: 180,
+      handle: '.drag-handle',
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: () => {
+        // Sync STATE.form.prefList with DOM order
+        const items = document.querySelectorAll('#prefList .pref-item');
+        const newOrder = [];
+        items.forEach(item => {
+          const code = item.dataset.code;
+          const c = STATE.form.prefList.find(p => p['Choice Code'] === code);
+          if (c) newOrder.push(c);
+        });
+        STATE.form.prefList = newOrder;
+        updatePrefRanks();
+      }
+    });
+  }, 100);
+}
+
+function renderPrefList() {
+  const el = document.getElementById('prefList');
+  document.getElementById('prefCount').textContent = STATE.form.prefList.length;
+
+  if (STATE.form.prefList.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><h3>No colleges added</h3><p>Add colleges from the suggestions or go back.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = STATE.form.prefList.map((c, i) => `
+    <li class="pref-item" data-code="${c['Choice Code']}">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <div class="pref-rank">${i + 1}</div>
+      <div class="pref-info">
+        <div class="pref-name">${c.Institute}</div>
+        <div class="pref-sub">${c.Branch} · ${c['Seat Type']} · Cutoff: ${parseFloat(c.Percentile).toFixed(2)}%</div>
+      </div>
+      <span class="pref-code">${c['Choice Code']}</span>
+      <button class="pref-del" onclick="removePref('${c['Choice Code']}')" title="Remove">✕</button>
+    </li>`).join('');
+}
+
+function removePref(code) {
+  STATE.form.prefList = STATE.form.prefList.filter(c => c['Choice Code'] !== code);
+  STATE.form.selectedColleges = STATE.form.selectedColleges.filter(c => c['Choice Code'] !== code);
+  renderPrefList();
+  renderSuggestions();
+  document.getElementById('prefCount').textContent = STATE.form.prefList.length;
+  toast('Removed from list.', 'info');
+}
+
+function updatePrefRanks() {
+  const items = document.querySelectorAll('#prefList .pref-item');
+  const ranks = document.querySelectorAll('#prefList .pref-rank');
+  ranks.forEach((r, i) => { r.textContent = i + 1; });
+}
+
+function sortByPercentileDesc() {
+  STATE.form.prefList.sort((a, b) => parseFloat(b.Percentile) - parseFloat(a.Percentile));
+  renderPrefList();
+  setTimeout(() => {
+    if (STATE.sortableInstance) STATE.sortableInstance.destroy();
+    STATE.sortableInstance = new Sortable(document.getElementById('prefList'), {
+      animation: 180, handle: '.drag-handle', ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen',
+      onEnd: () => {
+        const items = document.querySelectorAll('#prefList .pref-item');
+        const newOrder = [];
+        items.forEach(item => {
+          const code = item.dataset.code;
+          const c = STATE.form.prefList.find(p => p['Choice Code'] === code);
+          if (c) newOrder.push(c);
+        });
+        STATE.form.prefList = newOrder;
+        updatePrefRanks();
+      }
+    });
+  }, 50);
+  toast('Sorted by cutoff percentile.', 'info');
+}
+
+// =========================================================
+//  SUGGESTIONS PANEL
+// =========================================================
+function renderSuggestions() {
+  const cat = STATE.form.category;
+  const branches = STATE.form.branches;
+  const userPct = STATE.user.percentile;
+  const prefCodes = new Set(STATE.form.prefList.map(c => c['Choice Code']));
+
+  // Aspirational: 0–6% above user's percentile
+  const aspirational = COLLEGE_DATA.filter(c =>
+    c['Seat Type'] === cat && branches.includes(c.Branch) &&
+    parseFloat(c.Percentile) > userPct && parseFloat(c.Percentile) <= userPct + 6 &&
+    !prefCodes.has(c['Choice Code'])
+  ).sort((a, b) => parseFloat(a.Percentile) - parseFloat(b.Percentile));
+
+  // Safe: 5–20% below user's percentile, not in list
+  const safe = COLLEGE_DATA.filter(c =>
+    c['Seat Type'] === cat && branches.includes(c.Branch) &&
+    parseFloat(c.Percentile) < userPct - 2 && parseFloat(c.Percentile) >= userPct - 20 &&
+    !prefCodes.has(c['Choice Code'])
+  ).sort((a, b) => parseFloat(b.Percentile) - parseFloat(a.Percentile));
+
+  const el = document.getElementById('suggPanel');
+
+  let html = '';
+  if (aspirational.length === 0 && safe.length === 0) {
+    html = `<div class="empty-state" style="padding:24px"><p>All eligible colleges are in your list! 🎉</p></div>`;
+  }
+
+  if (aspirational.length > 0) {
+    html += `<div class="sugg-section-title">⭐ Aspirational (above your %ile)</div>`;
+    html += aspirational.slice(0, 6).map(c => suggCard(c)).join('');
+  }
+  if (safe.length > 0) {
+    html += `<div class="sugg-section-title">🛡 Safe Choices</div>`;
+    html += safe.slice(0, 8).map(c => suggCard(c)).join('');
+  }
+
+  el.innerHTML = html;
+}
+
+function suggCard(c) {
+  const pct = parseFloat(c.Percentile).toFixed(2);
+  const isAbove = parseFloat(c.Percentile) > STATE.user.percentile;
+  return `
+    <div class="sugg-item">
+      <div class="sugg-info">
+        <div class="sugg-name">${c.Institute.split(',')[0]}</div>
+        <div class="sugg-sub">${c.Branch} · <span style="color:${isAbove?'var(--chip-orange)':'var(--chip-green)'}">${pct}%</span></div>
+      </div>
+      <button class="sugg-add" onclick="addFromSugg('${c['Choice Code']}')">+ Add</button>
+    </div>`;
+}
+
+function addFromSugg(code) {
+  const college = COLLEGE_DATA.find(c => c['Choice Code'] === code);
+  if (!college) return;
+  if (STATE.form.prefList.find(c => c['Choice Code'] === code)) {
+    return toast('Already in your list.', 'info');
+  }
+  STATE.form.prefList.push(college);
+  STATE.form.selectedColleges.push(college);
+  renderPrefList();
+  renderSuggestions();
+  document.getElementById('prefCount').textContent = STATE.form.prefList.length;
+  setTimeout(() => {
+    if (STATE.sortableInstance) STATE.sortableInstance.destroy();
+    STATE.sortableInstance = new Sortable(document.getElementById('prefList'), {
+      animation: 180, handle: '.drag-handle', ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen',
+      onEnd: () => {
+        const items = document.querySelectorAll('#prefList .pref-item');
+        const newOrder = [];
+        items.forEach(item => {
+          const code = item.dataset.code;
+          const c = STATE.form.prefList.find(p => p['Choice Code'] === code);
+          if (c) newOrder.push(c);
+        });
+        STATE.form.prefList = newOrder;
+        updatePrefRanks();
+      }
+    });
+  }, 50);
+  toast('Added to preference list!', 'success');
+}
+
+// =========================================================
+//  ADD MORE (modal from Step 3)
+// =========================================================
+function showAddMorePanel() {
+  renderAddMore();
+  openModal('modalAddMore');
+}
+
+function renderAddMore() {
+  const search = document.getElementById('addMoreSearch').value.toLowerCase();
+  const cat = STATE.form.category;
+  const branches = STATE.form.branches;
+  const userPct = STATE.user.percentile;
+  const prefCodes = new Set(STATE.form.prefList.map(c => c['Choice Code']));
+
+  let colleges = COLLEGE_DATA.filter(c =>
+    c['Seat Type'] === cat && branches.includes(c.Branch) && !prefCodes.has(c['Choice Code'])
+  );
+
+  if (search) colleges = colleges.filter(c =>
+    c.Institute.toLowerCase().includes(search) || c.Branch.toLowerCase().includes(search)
+  );
+
+  colleges.sort((a, b) => parseFloat(b.Percentile) - parseFloat(a.Percentile));
+
+  const el = document.getElementById('addMoreList');
+  if (colleges.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No more colleges to add.</p></div>';
+    return;
+  }
+
+  el.innerHTML = colleges.map(c => {
+    const pct = parseFloat(c.Percentile);
+    const isAbove = pct > userPct;
+    return `
+      <div class="sugg-item">
+        <div class="sugg-info">
+          <div class="sugg-name">${c.Institute}</div>
+          <div class="sugg-sub">${c.Branch} · <span style="color:${isAbove?'var(--chip-orange)':'var(--chip-green)'}">${pct.toFixed(2)}%</span> · ${c['Seat Type']}</div>
+        </div>
+        <button class="sugg-add" onclick="addFromSugg('${c['Choice Code']}');renderAddMore()">+ Add</button>
+      </div>`;
+  }).join('');
+}
+
+// =========================================================
+//  SAVE FORM
+// =========================================================
+function saveDraftForm() {
+  syncPrefListFromDOM();
+  const forms = DB.getForms().filter(f => f.id !== STATE.form.id);
+  const formToSave = {
+    ...STATE.form,
+    userId: STATE.user.id,
+    createdAt: new Date().toISOString(),
+    draft: true
+  };
+  forms.push(formToSave);
+  DB.saveForms(forms);
+  toast('Draft saved!', 'success');
+}
+
+function saveAndPrint() {
+  syncPrefListFromDOM();
+  if (STATE.form.prefList.length === 0) return toast('Add at least one college first.', 'error');
+  const forms = DB.getForms().filter(f => f.id !== STATE.form.id);
+  const formToSave = {
+    ...STATE.form,
+    userId: STATE.user.id,
+    createdAt: new Date().toISOString(),
+    draft: false
+  };
+  forms.push(formToSave);
+  DB.saveForms(forms);
+  toast('Form saved! Generating PDF…', 'success');
+  setTimeout(generatePDF, 300);
+}
+
+function syncPrefListFromDOM() {
+  const items = document.querySelectorAll('#prefList .pref-item');
+  if (items.length === 0) return;
+  const newOrder = [];
+  items.forEach(item => {
+    const code = item.dataset.code;
+    const c = STATE.form.prefList.find(p => p['Choice Code'] === code);
+    if (c) newOrder.push(c);
+  });
+  STATE.form.prefList = newOrder;
+}
+
+// =========================================================
+//  PDF GENERATION
+// =========================================================
+function generatePDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const u = STATE.user;
+    const f = STATE.form;
+
+    // Header background
+    doc.setFillColor(230, 64, 58);
+    doc.rect(0, 0, 210, 38, 'F');
+
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('MHT-CET College Preference Form', 105, 16, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Choice Filling Tool — Confidential Document', 105, 23, { align: 'center' });
+    doc.text('Generated: ' + new Date().toLocaleString('en-IN'), 105, 29, { align: 'center' });
+
+    // Student Details heading
+    doc.setTextColor(30, 30, 30);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Student Details', 15, 46);
+
+    doc.autoTable({
+      startY: 50,
+      head: [],
+      body: [
+        ['Full Name', u.name],
+        ['Email Address', u.email],
+        ['MHT-CET Percentile', fmtPct(u.percentile)],
+        ['MHT-CET Rank', fmtNum(u.rank)],
+        ['Seat Category', f.category],
+        ['Selected Branches', f.branches.join(', ')],
+        ['Total Preferences', f.prefList.length.toString()],
+      ],
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 50, textColor: [80, 80, 80], fillColor: [250, 250, 250] },
+        1: { textColor: [30, 30, 30] }
+      },
+      tableLineColor: [220, 220, 220],
+      tableLineWidth: 0.2,
+    });
+
+    // Divider
+    const afterDetails = doc.lastAutoTable.finalY + 8;
+    doc.setDrawColor(230, 64, 58);
+    doc.setLineWidth(0.6);
+    doc.line(15, afterDetails, 195, afterDetails);
+
+    // Preference List heading
+    doc.setTextColor(30, 30, 30);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('College Preference List', 15, afterDetails + 8);
+
+    const tableRows = f.prefList.map((c, i) => [
+      i + 1,
+      c['Choice Code'],
+      c.Institute,
+      c.Branch,
+      c['Seat Type'],
+      parseFloat(c.Percentile).toFixed(4),
+      fmtNum(c.Rank)
+    ]);
+
+    doc.autoTable({
+      startY: afterDetails + 12,
+      head: [['#', 'Choice Code', 'Institute', 'Branch', 'Seat Type', 'Cutoff %ile', 'Cutoff Rank']],
+      body: tableRows,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [230, 64, 58],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+        cellPadding: 4,
+      },
+      styles: { fontSize: 7.5, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 22, fontStyle: 'bold', textColor: [59, 91, 219] },
+        2: { cellWidth: 65 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 18 },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 18, halign: 'right' },
+      },
+      alternateRowStyles: { fillColor: [252, 252, 252] },
+      tableLineColor: [230, 230, 230],
+      tableLineWidth: 0.1,
+    });
+
+    // Footer on all pages
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFillColor(248, 248, 248);
+      doc.rect(0, 284, 210, 13, 'F');
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.2);
+      doc.line(0, 284, 210, 284);
+      doc.setFontSize(7.5);
+      doc.setTextColor(130, 130, 130);
+      doc.setFont('helvetica', 'normal');
+      doc.text('MHT-CET Choice Filling Tool — This document is for reference only. Verify with official MHT-CET portal.', 15, 290);
+      doc.text('Page ' + i + ' of ' + pageCount, 195, 290, { align: 'right' });
+    }
+
+    const safeName = u.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+    doc.save('MHTCET-Preferences-' + safeName + '-' + Date.now() + '.pdf');
+    toast('PDF downloaded successfully!', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('PDF generation failed. Check console.', 'error');
+  }
+}
+
+// =========================================================
+//  VIEW FORM (saved form readonly)
+// =========================================================
+function viewForm(formId) {
+  const forms = DB.getForms();
+  const form = forms.find(f => f.id === formId);
+  if (!form) return toast('Form not found.', 'error');
+
+  STATE.viewingFormId = formId;
+
+  const el = document.getElementById('formViewContent');
+  el.innerHTML = `
+    <div class="form-view-header">
+      <h2>Preference Form</h2>
+      <div class="form-view-meta">
+        Category: ${form.category} · Branches: ${form.branches.join(', ')}<br>
+        Submitted: ${new Date(form.createdAt).toLocaleString('en-IN')} · ${form.prefList.length} preferences
+      </div>
+    </div>
+    <div class="card">
+      <h2>Student Details</h2>
+      <div class="user-info-grid">
+        <div class="info-block"><div class="info-label">Name</div><div class="info-value" style="font-size:15px">${STATE.user.name}</div></div>
+        <div class="info-block"><div class="info-label">Email</div><div class="info-value" style="font-size:13px">${STATE.user.email}</div></div>
+        <div class="info-block"><div class="info-label">Percentile</div><div class="info-value">${fmtPct(STATE.user.percentile)}</div></div>
+        <div class="info-block"><div class="info-label">Rank</div><div class="info-value">${fmtNum(STATE.user.rank)}</div></div>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:18px 20px;border-bottom:1px solid var(--stroke);background:var(--th-bg)">
+        <h2 style="margin:0">Preference List (${form.prefList.length})</h2>
+      </div>
+      <div class="table-wrap" style="border:none;border-radius:0">
+        <table class="pref-table">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Choice Code</th>
+              <th>Institute</th>
+              <th>Branch</th>
+              <th>Seat Type</th>
+              <th>Cutoff %ile</th>
+              <th>Cutoff Rank</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${form.prefList.map((c, i) => `
+              <tr>
+                <td><div class="rank-circle">${i + 1}</div></td>
+                <td><span class="chip" style="font-family:monospace">${c['Choice Code']}</span></td>
+                <td style="max-width:260px;white-space:normal">${c.Institute}</td>
+                <td>${c.Branch}</td>
+                <td><span class="chip chip-gray">${c['Seat Type']}</span></td>
+                <td><strong>${parseFloat(c.Percentile).toFixed(4)}</strong></td>
+                <td>${fmtNum(c.Rank)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  showPage('form-view');
+}
+
+function printViewForm() {
+  const forms = DB.getForms();
+  const form = forms.find(f => f.id === STATE.viewingFormId);
+  if (!form) return;
+  const prevForm = STATE.form;
+  STATE.form = form;
+  generatePDF();
+  STATE.form = prevForm;
+}
+
+// =========================================================
+//  ADMIN
+// =========================================================
+function renderAdminTable() {
+  const search = document.getElementById('adminSearch').value.toLowerCase();
+  const users = DB.getUsers().filter(u =>
+    !search || u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search)
+  );
+  const forms = DB.getForms();
+  const body = document.getElementById('adminBody');
+  document.getElementById('adminSub').textContent = users.length + ' registered users';
+
+  if (users.length === 0) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">No users found.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = users.map((u, i) => {
+    const userForms = forms.filter(f => f.userId === u.id);
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.email}</td>
+        <td><span class="chip chip-green">${fmtPct(u.percentile)}</span></td>
+        <td>${fmtNum(u.rank)}</td>
+        <td><span class="chip">${userForms.length}</span></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}')">✏️ Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="viewUserForms('${u.id}')">📋 Forms</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function openEditUser(userId) {
+  const users = DB.getUsers();
+  const u = users.find(u => u.id === userId);
+  if (!u) return;
+  document.getElementById('editUserId').value = u.id;
+  document.getElementById('editName').value = u.name;
+  document.getElementById('editEmail').value = u.email;
+  document.getElementById('editPercentile').value = u.percentile;
+  document.getElementById('editRank').value = u.rank;
+  document.getElementById('editPassword').value = '';
+  openModal('modalEditUser');
+}
+
+function saveEditUser() {
+  const id = document.getElementById('editUserId').value;
+  const name = document.getElementById('editName').value.trim();
+  const email = document.getElementById('editEmail').value.trim().toLowerCase();
+  const percentile = parseFloat(document.getElementById('editPercentile').value);
+  const rank = parseInt(document.getElementById('editRank').value);
+  const pwd = document.getElementById('editPassword').value;
+
+  if (!name || !email) return toast('Name and email required.', 'error');
+  if (isNaN(percentile)) return toast('Valid percentile required.', 'error');
+  if (isNaN(rank)) return toast('Valid rank required.', 'error');
+
+  const users = DB.getUsers();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return toast('User not found.', 'error');
+
+  users[idx].name = name;
+  users[idx].email = email;
+  users[idx].percentile = percentile;
+  users[idx].rank = rank;
+  if (pwd.length >= 6) users[idx].password = simpleHash(pwd);
+
+  DB.saveUsers(users);
+  closeModal('modalEditUser');
+  renderAdminTable();
+  toast('User updated successfully.', 'success');
+}
+
+function viewUserForms(userId) {
+  const users = DB.getUsers();
+  const user = users.find(u => u.id === userId);
+  if (!user) return;
+  const forms = DB.getForms().filter(f => f.userId === userId);
+  if (forms.length === 0) return toast(user.name + ' has no submissions yet.', 'info');
+  // Set as current user context to view their form
+  const prevUser = STATE.user;
+  STATE.user = user;
+  viewForm(forms[forms.length - 1].id);
+  // Restore admin after view
+  STATE.user = prevUser;
+}
+
+// =========================================================
+//  STEP BAR BUILDER
+// =========================================================
+function buildStepBar(current) {
+  const steps = [
+    { label: 'Category & Branches' },
+    { label: 'Select Colleges' },
+    { label: 'Preference List' },
+  ];
+  return `<div class="step-bar">` + steps.map((s, i) => {
+    const n = i + 1;
+    const state = n < current ? 'done' : n === current ? 'active' : 'pending';
+    return `
+      <div class="step-item">
+        <div class="step-col">
+          <div class="step-dot ${state}">${n < current ? '✓' : n}</div>
+          <div class="step-label">${s.label}</div>
+        </div>
+        ${i < steps.length - 1 ? `<div class="step-line ${n < current ? 'done' : ''}"></div>` : ''}
+      </div>`;
+  }).join('') + `</div>`;
+}
+
+// =========================================================
+//  INIT
+// =========================================================
+(function init() {
+  const session = DB.getSession();
+  if (session) {
+    STATE.user = session;
+    if (session.role === 'admin') {
+      renderAdminTable();
+      showPage('admin');
+    } else {
+      // Refresh user from storage (admin may have updated)
+      const users = DB.getUsers();
+      const fresh = users.find(u => u.id === session.id);
+      if (fresh) { STATE.user = fresh; DB.saveSession(fresh); }
+      renderDashboard();
+      showPage('dashboard');
+    }
+  } else {
+    showPage('auth');
+  }
+})();
+</script>
+</body>
+</html>
